@@ -21,7 +21,6 @@ class Dataset(object):
         
         self.tokenizer = Tokenizer()
         
-        self.token_type = opts.token_type
         self.train_set, self.dev_set, self.test_set = [], [], []
         
         self.target_fields = opts.target_fields
@@ -36,7 +35,7 @@ class Dataset(object):
         # self.test_set = self._load_dataset(opts.test_data_path)
 
         self.src_vocab = None
-        self.tgt_vocab = None
+        self.tgt_vocab_dict = None
         
     def train_dev_split(self):
         df = pd.read_csv(self.opts.all_train_data_path, encoding='utf-8')
@@ -45,15 +44,14 @@ class Dataset(object):
         dev.to_csv(self.opts.dev_data_path)
         
     def get_tokens(self, sample):
-        sample['seg_content'] = self.tokenizer.transform(sample['question_text'])
+        sample['q1_tokens'] = self.tokenizer.tokenize(sample['q1'])
+        sample['q2_tokens'] = self.tokenizer.tokenize(sample['q2'])
         
     def _load_dataset(self, data_path, header=0, train=False):
         samples = pd.read_csv(data_path, header=header, encoding='utf-8').to_dict('records')
-#        with ThreadPool(self.opts.num_workers) as threads:
-#            threads.map(self.get_tokens, samples)
 
         for sample in samples:
-            sample['seg_content'] = self.tokenizer.transform(sample['question_text'])
+            self.get_tokens(sample)
         return samples
 
     def build_vocab(self):
@@ -74,7 +72,8 @@ class Dataset(object):
                 tgt_vocab.add(tgt)
             tgt_vocab_dict[tgt_field] = tgt_vocab
         self.src_vocab = src_vocab
-        self.tgt_vocab = tgt_vocab_dict
+        self.tgt_vocab_dict = tgt_vocab_dict
+        self.convert_to_ids()
     
     def _one_mini_batch(self, data, indices, tgt_field, set_name):
 
@@ -82,28 +81,30 @@ class Dataset(object):
         batch = []
         for sidx, sample in enumerate(raw_data):
             batch_data = {}
-            batch_data['sentence_word_ids'] = sample['sentence_word_ids']
+            batch_data['q1_token_ids'] = sample['q1_token_ids']
+            batch_data['q2_token_ids'] = sample['q2_token_ids']
             if set_name in ['train', 'dev']:
                 batch_data['tgt'] = sample[tgt_field + '_id']
 
             batch.append(batch_data)
-        batch = self._dynamic_padding(batch, 0)
+        self._dynamic_padding(batch, 0, 'q1_token_ids')
+        self._dynamic_padding(batch, 0, 'q2_token_ids')
         return batch
 
-    def _dynamic_padding(self, batch_data, pad_id):
+    def _dynamic_padding(self, batch_data, pad_id, field):
         
         if self.opts.fix_sentence_size:
             pad_sentence_size = self.max_sentence_size
         else:
             pad_sentence_size = min(self.max_sentence_size, 
-                                max([len(t['sentence_word_ids']) for t in batch_data]))
-        
+                                max([len(t[field]) for t in batch_data]))
+            
         
         for sub_batch_data in batch_data:
-            ids = sub_batch_data['sentence_word_ids']
+            ids = sub_batch_data[field]
             # print(len(ids), pad_sentence_size)
-            sub_batch_data['sentence_word_ids'] = ids + [pad_id] * (pad_sentence_size - len(ids))
-            sub_batch_data['sentence_word_ids'] = sub_batch_data['sentence_word_ids'][:pad_sentence_size]
+            sub_batch_data[field] = ids + [pad_id] * (pad_sentence_size - len(ids))
+            sub_batch_data[field] = sub_batch_data[field][:pad_sentence_size]
             # print(len(sub_batch_data['sentence_word_ids'] ))
         return batch_data
 
@@ -121,21 +122,24 @@ class Dataset(object):
             raise NotImplementedError('No data set named as {}'.format(set_name))
         if data_set is not None:
             for sample in data_set:
-                for token in sample['seg_content']:
+                for token in sample['q1_tokens']:
+                    yield token
+                for token in sample['q2_tokens']:
                     yield token
                     
 
-    def convert_to_ids(self, src_vocab, tgt_vocab):
+    def convert_to_ids(self):
 
         for idx, data_set in enumerate([self.train_set, self.dev_set, self.test_set]):
             if not len(data_set):
                 continue
             for sample in data_set:
-                sample['sentence_word_ids'] = src_vocab.convert_to_ids(sample['seg_content'])
+                sample['q1_token_ids'] = self.src_vocab.convert_to_ids(sample['q1_tokens'])
+                sample['q2_token_ids'] = self.src_vocab.convert_to_ids(sample['q2_tokens'])
                 if idx <= 1:
                     for tgt_field in self.target_fields:
                         if tgt_field in sample:
-                            sample[tgt_field + '_id'] = tgt_vocab[tgt_field].get_id(sample[tgt_field])
+                            sample[tgt_field + '_id'] = self.tgt_vocab_dict[tgt_field].get_id(sample[tgt_field])
 
     def gen_mini_batches(self, set_name, batch_size, tgt_field, shuffle=True):
 
