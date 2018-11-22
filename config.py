@@ -12,4 +12,4 @@ class Config:
     train_data_path = './data/train.csv'
     dev_data_path = './data/test.csv'
     embedding_path = './data/emb.txt'
-    data_path = 'sen.dat'
+    data_path = './data/sen.dat'

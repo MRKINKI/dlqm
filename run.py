@@ -118,6 +118,7 @@ def predict(args):
 
 
 if __name__ == '__main__':
-    prepare(Config)
+    pass
+#    prepare(Config)
 #    train(Config)
 #    predict(Config)
