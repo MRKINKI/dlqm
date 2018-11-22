@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import re
-import nltk
-from nltk.stem import SnowballStemmer
-
 
 class Tokenizer:
 
@@ -12,5 +8,3 @@ class Tokenizer:
         
     def tokenize(self, text):
         return list(text)
-    
-    

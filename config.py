@@ -13,3 +13,18 @@ class Config:
     dev_data_path = './data/test.csv'
     embedding_path = './data/emb.txt'
     data_path = './data/sen.dat'
+    model_dir = './data/model'
+    
+    epochs = 20
+    batch_size = 32
+    log_per_updates = 10
+    eval_per_epoch = 1
+    fc_layer_dropout_rate = 0.1
+    
+    # text_biattn
+    cuda = False
+    hidden_size = 128
+    rnn_layer_num = 1
+    rnn_dropout_rate = 0.3
+    
+    tfidf_threshold = 0.5

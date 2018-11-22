@@ -11,7 +11,6 @@ class TextBiattn(nn.Module):
         super(TextBiattn, self).__init__()
         self.opts = opts
         self.label_num = label_num
-        self.pad_sentence_size = opts.max_sentence_size
         
         embedding = torch.tensor(embedding).float()
         self.embedding = torch.nn.Embedding(embedding.size(0),
@@ -28,8 +27,6 @@ class TextBiattn(nn.Module):
         
         self.Wc = nn.Linear(2 * self.opts.hidden_size, 1, bias=False)
         
-        self.lin = nn.Linear(2 * self.opts.hidden_size, self.label_num)
-        
 
     def forward(self, batch):
         batch = self.embedding(batch)
@@ -43,9 +40,5 @@ class TextBiattn(nn.Module):
         
         qtd = qtd.view(-1, 2 * self.opts.hidden_size)
         # x = self.dropout(x)
-
-        x = self.lin(qtd)
         
-        x = x.view(-1, self.label_num)
-        
-        return x
+        return qtd

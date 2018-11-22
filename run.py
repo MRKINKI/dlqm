@@ -27,7 +27,6 @@ logger.addHandler(console_handler)
 
 def prepare(args):
     logger = logging.getLogger("rc")
-#    train_test_split(args.all_file, args.train_file, args.test_file, args.train_rate)
     sen_data = Dataset(args)
     sen_data.build_vocab()
     
@@ -43,7 +42,7 @@ def train(args):
         dataset = pickle.load(fin)
         
     for tgt_field in args.target_fields:
-        model = DLModel(args, dataset.tgt_vocab[tgt_field].size(), dataset.src_vocab.embeddings)
+        model = DLModel(args, dataset.tgt_vocab_dict[tgt_field].size(), dataset.src_vocab.embeddings)
         logger.info('train tgt_field:{}'.format(tgt_field))
         if args.cuda:
             model.cuda()
@@ -69,7 +68,7 @@ def train(args):
                 # print(tgts)
                 # print(preds)
                 print(classification_report(tgts, preds))
-                f1 = f1_score(tgts, preds, average='macro')
+                f1 = f1_score(tgts, preds)
                 logger.info('f1 :{}'.format(f1))
             
             model_file = os.path.join(args.model_dir,
@@ -120,5 +119,5 @@ def predict(args):
 if __name__ == '__main__':
     pass
 #    prepare(Config)
-#    train(Config)
+    train(Config)
 #    predict(Config)
