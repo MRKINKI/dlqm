@@ -27,10 +27,8 @@ class TextMatcher(nn.Module):
             x = x.view(-1, 2)
         elif self.opts.match_module_type == 'cos':
             x = self.cos(q1_vector_batch, q2_vector_batch)
-            # print(x)
             tmp = torch.ones(x.size(0), 1)
             tmp = tmp - x
             x = torch.cat([tmp, x], 1)
         
         return x
-        

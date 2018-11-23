@@ -59,7 +59,7 @@ def train(args):
             if epoch % args.eval_per_epoch == 0:
                 model.opts.training = False
                 tgts, preds = [], []
-                dev_batches = dataset.gen_mini_batches('dev', args.batch_size, tgt_field,   shuffle=False)
+                dev_batches = dataset.gen_mini_batches('dev', args.batch_size, tgt_field, shuffle=False)
                 for batch in dev_batches:
                     pred_pros = model.predict(batch)
                     pred = list(np.argmax(pred_pros, 1))
