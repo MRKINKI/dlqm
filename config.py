@@ -28,3 +28,5 @@ class Config:
     rnn_dropout_rate = 0.3
     
     tfidf_threshold = 0.5
+    
+    match_module_type = 'cos'

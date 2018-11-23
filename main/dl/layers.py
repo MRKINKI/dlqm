@@ -6,10 +6,15 @@ import torch.nn.functional as F
 
 class CosineLayer(nn.Module):
     def __init__(self):
+        super(CosineLayer, self).__init__()
         pass
     
     def forward(self, input_a, input_b):
-        pass
+        input_a_norm = F.normalize(input_a, p=2, dim=1).view(-1, 1, input_a.size(1))
+        input_b_norm = F.normalize(input_b, p=2, dim=1).view(-1, 1, input_b.size(1))
+        input_b_norm = torch.transpose(input_b_norm, 1, 2)
+        x = torch.bmm(input_a_norm, input_b_norm).view(-1, 1)
+        return x
 
 
 class FCLayers(nn.Module):
